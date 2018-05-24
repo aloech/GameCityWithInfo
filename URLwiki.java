@@ -18,7 +18,7 @@ public class URLwiki {
         //
         */
 
-        String city = "Москва";
+        String city = "зима";
         URL wiki;
         URLConnection wikiCon = null;
 
@@ -30,6 +30,7 @@ public class URLwiki {
         } catch (UnknownHostException e) {
             //ошибка подключения
             System.out.println("Ошибка подключения к интернету");
+            return;
         }
 
 
@@ -48,6 +49,47 @@ public class URLwiki {
         long length;
         try {
             length = wikiCon.getContentLengthLong();
+            if (length != 0) {
+                inStream = wikiCon.getInputStream();
+                sc = new Scanner(inStream);
+                while (sc.hasNext()) {
+                    s = sc.nextLine();
+                    strWithInfoCity = strWithInfoCity + s + "\n";
+                }
+                inStream.close();
+            }
+        } catch (SocketException e1) {
+            System.out.println("Ошибка подключения к интернету");
+            return;
+
+        } catch (FileNotFoundException e3) {
+            System.out.println("Такого слова не существует");
+            return;
+        }
+
+        //в данной строке информация об объекте
+        String beginWordForCity = "infobox";
+        String endWordForCity = "<span";
+        String resultStr = "\nНеобходимая для поиска строка не найдена\n";
+        boolean isContain = false;
+
+        /*
+        //
+        //проверка есть ли в содержимом строка с нужными словами
+        //
+        */
+        try {
+            resultStr = strWithInfoCity.substring(strWithInfoCity.indexOf(beginWordForCity));
+            resultStr = resultStr.substring(0, resultStr.indexOf(endWordForCity));
+        } catch (StringIndexOutOfBoundsException e) {
+
+            //в такой последовательности слов нет строки
+            //либо это несуществующее слово, либо не только город
+            try {
+                wiki = new URL("https://ru.wikipedia.org/wiki/" + city + "_(город)");
+                wikiCon = wiki.openConnection();
+                length = wikiCon.getContentLengthLong();
+                //извлекаем содержимое для варианта если это не только город
                 if (length != 0) {
                     inStream = wikiCon.getInputStream();
                     sc = new Scanner(inStream);
@@ -57,69 +99,28 @@ public class URLwiki {
                     }
                     inStream.close();
                 }
-            }
-        catch (SocketException e1){
-            System.out.println("Ошибка подключения к интернету");
-
-        }
-        catch (FileNotFoundException e3){
-            System.out.println("Такого слова не существует");
-        }
-
-            //в данной строке информация об объекте
-            String beginWordForCity = "infobox";
-            String endWordForCity = "<span";
-            String resultStr = "\nНеобходимая для поиска строка не найдена\n";
-
-
-        /*
-        //
-        //проверка есть ли в содержимом строка с нужными словами
-        //
-        */
-            boolean isContain = false;
-            try {
                 resultStr = strWithInfoCity.substring(strWithInfoCity.indexOf(beginWordForCity));
                 resultStr = resultStr.substring(0, resultStr.indexOf(endWordForCity));
-            } catch (StringIndexOutOfBoundsException e) {
-
-                //в такой последовательности слов нет строки
-                //либо это несуществующее слово, либо не только город
-                try {
-                    wiki = new URL("https://ru.wikipedia.org/wiki/" + city + "_(город)");
-                    wikiCon = wiki.openConnection();
-                    length = wikiCon.getContentLengthLong();
-                    //извлекаем содержимое для варианта если это не только город
-                    if (length != 0) {
-                        inStream = wikiCon.getInputStream();
-                        sc = new Scanner(inStream);
-                        while (sc.hasNext()) {
-                            s = sc.nextLine();
-                            strWithInfoCity = strWithInfoCity + s + "\n";
-                        }
-                        inStream.close();
-                    }
-                    resultStr = strWithInfoCity.substring(strWithInfoCity.indexOf(beginWordForCity));
-                    resultStr = resultStr.substring(0, resultStr.indexOf(endWordForCity));
-
-                    //проверяем есть ли слово "город" или "столица" в данной строке
-                    isContain = resultStr.contains("Город") | resultStr.contains("Столица");
-                    System.out.println(isContain);   // нашел - выведет true
-                    if (isContain) {
-                        System.out.println("\nЭто ГОРОД!");
-                    } else {
-                        System.out.println("Это ТОЧНОТОЧНО не город!");
-                    }
-                } catch (FileNotFoundException e2) {
-                    System.out.println("Это слово не город");
-                }
-
+            } catch (FileNotFoundException e2) {
+                System.out.println(isContain);
+                return;
             }
-            System.out.println(resultStr);
-            System.out.println(isContain);
 
+        }
 
+        //проверяем есть ли слово "город" или "столица" в данной строке
+        isContain = resultStr.contains("Город") || resultStr.contains("Столица");
+        System.out.println(isContain);   // нашел - выведет true
+        if (isContain) {
+            System.out.println("\nЭто ГОРОД!");
+            strWithInfoPopulation = strWithInfoCity.substring(strWithInfoCity.indexOf("nowrap"));
+            strWithInfoPopulation = strWithInfoPopulation.substring(0,strWithInfoPopulation.indexOf("span"));
+            System.out.println(strWithInfoPopulation);
+        } else {
+            System.out.println("Это ТОЧНО не город!");
         }
 
     }
+
+}
 
